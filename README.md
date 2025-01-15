@@ -143,10 +143,28 @@ subx() {
   echo "Sonuçlar: $output_file"
 }
 
-
-linkx() {
+linx() {
   base_url=$(echo "$1" | awk -F/ '{print $3}')
   sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | awk -v base="$base_url" '{print "https://"base$0}'
 }
 
+dotdot() {
+  local file="$1"
+  local dot_count="${2:-4}"  # Varsayılan olarak 4
+  local green='\033[0;32m'
+  local reset='\033[0m'
+
+  # Dosya mevcut değilse hiçbir şey döndürme
+  [[ -f "$file" ]] || return
+
+  # Belirtilen noktaları filtrele ve eşleşen satırları yeşil renkte göster
+  grep -E "^([^\.]*\.){$dot_count}[^\.]*$" "$file" | while read -r line; do
+    echo -e "${green}${line}${reset}"
+  done
+
+  # Toplam eşleşen satır sayısını yeşil renkte göster
+  local count
+  count=$(grep -E "^([^\.]*\.){$dot_count}[^\.]*$" "$file" | wc -l)
+  [[ "$count" -gt 0 ]] && echo -e "${green}Length: ${count}${reset}"
+}
 ```

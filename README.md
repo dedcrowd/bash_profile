@@ -1,23 +1,32 @@
 # .bash_profile
-```
-#----- AWS -------
+```#----- AWS -------
+
+LabInstallDedcrowd() {
+echo "[x] DedCrowd Lab is installing... "
+
+echo "  crtndstry is installing..."
+cd git; git clone https://github.com/nahamsec/crtndstry.git
+
+
+}
+
 
 s3ls(){
 aws s3 ls s3://$1
 }
 
 s3cp(){
-aws s3 cp $2 s3://$1 
+aws s3 cp $2 s3://$1
 }
 
 #---- Content discovery ----
 thewadl(){ #this grabs endpoints from a application.wadl and puts them in yahooapi.txt
-curl -s $1 | grep path | sed -n "s/.*resource path=\"\(.*\)\".*/\1/p" | tee -a ~/tools/dirsearch/db/yahooapi.txt
+curl -s $1 | grep path | sed -n "s/.*resource path=\"\(.*\)\".*/\1/p" | tee -a /opt/thewadlApi_$1.txt
 }
 
 #----- recon -----
 crtndstry(){
-./tools/crtndstry/crtndstry $1
+./opt/crtndstry/crtndstry $1
 }
 
 am(){ #runs amass passively and saves to json
@@ -33,7 +42,7 @@ mscan(){ #runs masscan
 sudo masscan -p4443,2075,2076,6443,3868,3366,8443,8080,9443,9091,3000,8000,5900,8081,6000,10000,8181,3306,5000,4000,8888,5432,15672,9999,161,4044,7077,4040,9000,8089,443,744$}
 }
 
-certspotter(){ 
+certspotter(){
 curl -s https://certspotter.com/api/v0/certs\?domain\=$1 | jq '.[].dns_names[]' | sed 's/\"//g' | sed 's/\*\.//g' | sort -u | grep $1
 } #h/t Michiel Prins
 
@@ -52,23 +61,35 @@ curl http://ipinfo.io/$1
 
 #------ Tools ------
 dirsearch(){ runs dirsearch and takes host and extension as arguments
-python3 ~/tools/dirsearch/dirsearch.py -u $1 -e $2 -t 50 -b 
+dirsearch.py -u $1 -e $2 -t 50 -b
 }
+
 
 ncx(){
 nc -l -n -vv -p $1 -k
 }
 
 crtshdirsearch(){ #gets all domains from crtsh, runs httprobe and then dir bruteforcers
-curl -s https://crt.sh/?q\=%.$1\&output\=json | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} python3 ~/tools/dirsearch/dirsearch.py -u {} -e $2 -t 50 -b 
+curl -s https://crt.sh/?q\=%.$1\&output\=json | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} dirsearch -u {} -e $2 -t 50 -b
 }
+
+# ncx fonksiyonu
+ncx() {
+  nc -l -n -vv -p "$1" -k
+}
+
+# crtshdirsearch fonksiyonu
+crtshdirsearch() { # gets all domains from crtsh, runs httprobe and then dir bruteforcers
+  curl -s "https://crt.sh/?q=%.$1&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} dirsearch -u {} -e "$2" -t 50 -b
+}
+
 
 # sqlx fonksiyonu
 sqlx() {
   sudo sqlmap -u "$1" --batch --dbs --tamper=space2comment --technique=BEUST --level=3 --risk=3 --schema
 }
 
-ffx() {
+ffr() {
   ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230
 }
 
@@ -81,40 +102,51 @@ fft() {
 subx() {
   # Parametreler ve dosya adları
   domain="$1"
-  output_file="sub.$domain.txt"
-  intermediate_file="intermediate_$domain.txt"
-  github_token="Githubtoken"
+  output_file="wholesubs_$domain.txt"
+  github_token=""
 
   # Başlangıç bildirimi
   echo "[*] Subdomain toplama işlemi başladı: $domain"
 
-  # Paralel işlemlerle subdomain toplama
+  # Alt alan adları için geçici dosyalar
+  tmp_dir=$(mktemp -d)
+  sublist3r_file="$tmp_dir/sub1.txt"
+  subfinder_file="$tmp_dir/sub2.txt"
+  assetfinder_file="$tmp_dir/sub3.txt"
+  crt_file="$tmp_dir/sub4.txt"
+  github_file="$tmp_dir/sub5.txt"
 
-    echo "[*] Sublist3r çalışıyor..."
-    sublist3r -d "$domain" -o sub1.txt
+  # Subdomain toplama araçları
+  echo "[*] Sublist3r çalışıyor..."
+  sublist3r -d "$domain" -o "$sublist3r_file" 2>/dev/null
 
-    echo "[*] Subfinder çalışıyor..."
-    subfinder -d "$domain" -all -recursive -silent > sub2.txt
+  echo "[*] Subfinder çalışıyor..."
+  subfinder -d "$domain" -all -recursive -silent > "$subfinder_file"
 
-    echo "[*] Assetfinder çalışıyor..."
-    assetfinder --subs-only "$domain" > sub3.txt
+  echo "[*] Assetfinder çalışıyor..."
+  assetfinder --subs-only "$domain" > "$assetfinder_file"
 
-    echo "[*] crt.sh sorgusu çalışıyor..."
-    curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' > sub4.txt
-    echo "[*] github-subdomain sorgusu calisiyor"
+  echo "[*] crt.sh sorgusu çalışıyor..."
+  curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\\*\\.//g' > "$crt_file"
 
-    github-subdomains -t githubTOken -d "$1"  -o sub5.txt
-    rm -rf sub1.txt sub2.txt sub3.txt sub4.txt sub5.txt
+  echo "[*] GitHub subdomain sorgusu çalışıyor..."
+  github-subdomains -t "$github_token" -d "$domain" -o "$github_file"
 
-    cat sub1.txt sub2.txt sub3.txt sub4.txt sub5.txt | anew > wholesubs.txt
-    rm -rf sub1.txt sub2.txt sub3.txt sub4.txt sub5.txt
+  # Tüm sonuçları birleştir
+  echo "[*] Sonuçlar birleştiriliyor..."
+  cat "$sublist3r_file" "$subfinder_file" "$assetfinder_file" "$crt_file" "$github_file" | sort -u > "$output_file"
+
+  # Geçici dosyaları temizle
+  rm -rf "$tmp_dir"
 
   echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"
-  echo "Sonuçlar: wholesubs.txt"
+  echo "Sonuçlar: $output_file"
 }
+
 
 linkx() {
   base_url=$(echo "$1" | awk -F/ '{print $3}')
   sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | awk -v base="$base_url" '{print "https://"base$0}'
 }
+
 ```

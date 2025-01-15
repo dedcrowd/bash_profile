@@ -83,34 +83,29 @@ subx() {
   domain="$1"
   output_file="sub.$domain.txt"
   intermediate_file="intermediate_$domain.txt"
-  github_token="ghp_TOKEN"
+  github_token="<<<<<GITHUBTOKEM>>>>>>>"
 
   # Başlangıç bildirimi
   echo "[*] Subdomain toplama işlemi başladı: $domain"
 
   # Paralel işlemlerle subdomain toplama
-  (
+
     echo "[*] Sublist3r çalışıyor..."
-    sublist3r -d "$domain" &>/dev/null
-  ) > "$intermediate_file" &
+    sublist3r -d "$domain" -o sub1.txt
 
-  (
     echo "[*] Subfinder çalışıyor..."
-    subfinder -d "$domain" -all -recursive -silent &>/dev/null
-  ) >> "$intermediate_file" &
+    subfinder -d "$domain" -all -recursive -silent > sub2.txt
 
-  (
     echo "[*] Assetfinder çalışıyor..."
-    assetfinder --subs-only "$domain" &>/dev/null
-  ) >> "$intermediate_file" &
+    assetfinder --subs-only "$domain" > sub3.txt
 
-  (
     echo "[*] crt.sh sorgusu çalışıyor..."
-    curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' &>/dev/null
-  ) >> "$intermediate_file" &
+    curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' > sub4.txt
+    cat sub1.txt sub2.txt sub3.txt sub4.txt > wholesubs.txt
+    rm -rf sub1.txt sub2.txt sub3.txt sub4.txt
 
   echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"
-  echo "Sonuçlar: $intermediate_file"
+  echo "Sonuçlar: wholesubs.txt"
 }
 
 linkx() {

@@ -101,7 +101,7 @@ subx() {
 
     echo "[*] crt.sh sorgusu çalışıyor..."
     curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' > sub4.txt
-    cat sub1.txt sub2.txt sub3.txt sub4.txt > wholesubs.txt
+    cat sub1.txt sub2.txt sub3.txt sub4.txt | anew > wholesubs.txt
     rm -rf sub1.txt sub2.txt sub3.txt sub4.txt
 
   echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"

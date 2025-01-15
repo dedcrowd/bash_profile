@@ -113,7 +113,10 @@ subx() {
   echo "Sonuçlar: $intermediate_file"
 }
 
-linkx(){
-  sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | xargs -I {} sh -c " echo $1{}"
+linkx() {
+  base_url=$(echo "$1" | awk -F/ '{print $3}')
+  sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | awk -v base="$base_url" '{print "https://"base$0}'
 }
+
+
 ```

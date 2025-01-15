@@ -63,16 +63,12 @@ crtshdirsearch(){ #gets all domains from crtsh, runs httprobe and then dir brute
 curl -s https://crt.sh/?q\=%.$1\&output\=json | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} python3 ~/tools/dirsearch/dirsearch.py -u {} -e $2 -t 50 -b 
 }
 
-linkfinder(){
-python3 /opt/Linkfinder/linkfinder.py -i '$1' -r ^/ -o cli
-}
-
 # sqlx fonksiyonu
 sqlx() {
   sudo sqlmap -u "$1" --batch --dbs --technique=space2comment -t BEUST --level=3 --risk=3 --schema
 }
 
-ffr() {
+ffx() {
   ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230
 }
 
@@ -87,7 +83,7 @@ subx() {
   domain="$1"
   output_file="sub.$domain.txt"
   intermediate_file="intermediate_$domain.txt"
-  github_token="ghp_sbvn05kHpC5oPIOushqSCDQbfbLoYd2XxMh"
+  github_token="ghp_TOKEN"
 
   # Başlangıç bildirimi
   echo "[*] Subdomain toplama işlemi başladı: $domain"
@@ -113,27 +109,11 @@ subx() {
     curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' &>/dev/null
   ) >> "$intermediate_file" &
 
-  (
-    echo "[*] SubDomainizer çalışıyor..."
-    sudo python3 /opt/SubDomainizer/SubDomainizer.py -u "https://$domain" -o temp_subdomainizer.txt -gt "$github_token" -g &>/dev/null
-    cat temp_subdomainizer.txt
-  ) >> "$intermediate_file" &
-
-  wait
-
-  # Tekrarlayanları kaldır ve tüm sonuçları temizle
-  echo "[*] Tekrarlayan alt alan adları kaldırılıyor..."
-  sort -u "$intermediate_file" > "$output_file"
-
-  # HTTP doğrulama
-  echo "[*] httpx ile alt alan adları kontrol ediliyor..."
-  httpx -silent -threads 100 -l "$output_file" > "validated_$output_file"
-
-  # Geçici dosyaları temizle
-  rm -f temp_subdomainizer.txt "$intermediate_file"
-
   echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"
-  echo "Sonuçlar: validated_$output_file"
+  echo "Sonuçlar: $intermediate_file"
 }
+
+linkx(){
+  sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli
 
 ```

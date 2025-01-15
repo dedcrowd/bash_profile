@@ -55,15 +55,27 @@ dirsearch(){ runs dirsearch and takes host and extension as arguments
 python3 ~/tools/dirsearch/dirsearch.py -u $1 -e $2 -t 50 -b 
 }
 
-sqlmap(){
-python ~/tools/sqlmap*/sqlmap.py -u $1 
-}
-
 ncx(){
 nc -l -n -vv -p $1 -k
 }
 
 crtshdirsearch(){ #gets all domains from crtsh, runs httprobe and then dir bruteforcers
 curl -s https://crt.sh/?q\=%.$1\&output\=json | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} python3 ~/tools/dirsearch/dirsearch.py -u {} -e $2 -t 50 -b 
+}
+
+linkfinder(){
+python3 /opt/Linkfinder/linkfinder.py -i '$1' -r ^/ -o cli
+}
+
+sqlx(){
+sqlmap -u '$1' --batch --dbs --technique=space2comment -t BEUST --level=3 --risk=3 --schema
+}
+
+ffr(){
+ffuf -w /root/myWordlists/api-endpoints-res.txt -u '$1' -fc 403 -t 230
+}
+
+subx(){
+sublist3r -d $1 > sub.$1.txt ; subfinder -d $1 -all -recursive -nW >> sub.$1.txt ;  github-subdomains -t ghp_sbvn05kHpC5oPIOushqSCDQbfbLoYd2XxMh -d $1  -o githubSubs_$1.txt; crtsh $1 >> sub.$1.txt ; certprobe >> sub.$1.txt ; certspotter  >> sub.$1.txt
 }
 ```

@@ -114,6 +114,6 @@ subx() {
 }
 
 linkx(){
-  sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli
-
+  sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | xargs -I {} sh -c " echo $1{}"
+}
 ```

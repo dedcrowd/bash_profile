@@ -65,7 +65,7 @@ curl -s https://crt.sh/?q\=%.$1\&output\=json | jq -r '.[].name_value' | sed 's/
 
 # sqlx fonksiyonu
 sqlx() {
-  sudo sqlmap -u "$1" --batch --dbs --technique=space2comment -t BEUST --level=3 --risk=3 --schema
+  sudo sqlmap -u "$1" --batch --dbs --tamper=space2comment --technique=BEUST --level=3 --risk=3 --schema
 }
 
 ffx() {

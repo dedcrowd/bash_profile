@@ -67,15 +67,73 @@ linkfinder(){
 python3 /opt/Linkfinder/linkfinder.py -i '$1' -r ^/ -o cli
 }
 
-sqlx(){
-sqlmap -u '$1' --batch --dbs --technique=space2comment -t BEUST --level=3 --risk=3 --schema
+# sqlx fonksiyonu
+sqlx() {
+  sudo sqlmap -u "$1" --batch --dbs --technique=space2comment -t BEUST --level=3 --risk=3 --schema
 }
 
-ffr(){
-ffuf -w /root/myWordlists/api-endpoints-res.txt -u '$1' -fc 403 -t 230
+ffr() {
+  ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230
 }
 
-subx(){
-sublist3r -d $1 > sub.$1.txt ; subfinder -d $1 -all -recursive -nW >> sub.$1.txt ;  github-subdomains -t ghp_sbvn05kHpC5oPIOushqSCDQbfbLoYd2XxMh -d $1  -o githubSubs_$1.txt; crtsh $1 >> sub.$1.txt ; certprobe >> sub.$1.txt ; certspotter  >> sub.$1.txt
+
+fft() {
+  echo "URL: $1"
+  echo "Filter Size: $2"
 }
+
+subx() {
+  # Parametreler ve dosya adları
+  domain="$1"
+  output_file="sub.$domain.txt"
+  intermediate_file="intermediate_$domain.txt"
+  github_token="ghp_sbvn05kHpC5oPIOushqSCDQbfbLoYd2XxMh"
+
+  # Başlangıç bildirimi
+  echo "[*] Subdomain toplama işlemi başladı: $domain"
+
+  # Paralel işlemlerle subdomain toplama
+  (
+    echo "[*] Sublist3r çalışıyor..."
+    sublist3r -d "$domain" &>/dev/null
+  ) > "$intermediate_file" &
+
+  (
+    echo "[*] Subfinder çalışıyor..."
+    subfinder -d "$domain" -all -recursive -silent &>/dev/null
+  ) >> "$intermediate_file" &
+
+  (
+    echo "[*] Assetfinder çalışıyor..."
+    assetfinder --subs-only "$domain" &>/dev/null
+  ) >> "$intermediate_file" &
+
+  (
+    echo "[*] crt.sh sorgusu çalışıyor..."
+    curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' &>/dev/null
+  ) >> "$intermediate_file" &
+
+  (
+    echo "[*] SubDomainizer çalışıyor..."
+    sudo python3 /opt/SubDomainizer/SubDomainizer.py -u "https://$domain" -o temp_subdomainizer.txt -gt "$github_token" -g &>/dev/null
+    cat temp_subdomainizer.txt
+  ) >> "$intermediate_file" &
+
+  wait
+
+  # Tekrarlayanları kaldır ve tüm sonuçları temizle
+  echo "[*] Tekrarlayan alt alan adları kaldırılıyor..."
+  sort -u "$intermediate_file" > "$output_file"
+
+  # HTTP doğrulama
+  echo "[*] httpx ile alt alan adları kontrol ediliyor..."
+  httpx -silent -threads 100 -l "$output_file" > "validated_$output_file"
+
+  # Geçici dosyaları temizle
+  rm -f temp_subdomainizer.txt "$intermediate_file"
+
+  echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"
+  echo "Sonuçlar: validated_$output_file"
+}
+
 ```

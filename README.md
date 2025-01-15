@@ -83,6 +83,7 @@ subx() {
   domain="$1"
   output_file="sub.$domain.txt"
   intermediate_file="intermediate_$domain.txt"
+  github_token="Githubtoken"
 
   # Başlangıç bildirimi
   echo "[*] Subdomain toplama işlemi başladı: $domain"
@@ -102,7 +103,7 @@ subx() {
     curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' > sub4.txt
     echo "[*] github-subdomain sorgusu calisiyor"
 
-    github-subdomains -t GithubToken -d nasa.gov  -o sub5.txt
+    github-subdomains -t githubTOken -d "$1"  -o sub5.txt
     rm -rf sub1.txt sub2.txt sub3.txt sub4.txt sub5.txt
 
     cat sub1.txt sub2.txt sub3.txt sub4.txt sub5.txt | anew > wholesubs.txt
@@ -116,5 +117,4 @@ linkx() {
   base_url=$(echo "$1" | awk -F/ '{print $3}')
   sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | awk -v base="$base_url" '{print "https://"base$0}'
 }
-
 ```

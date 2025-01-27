@@ -169,8 +169,14 @@ dotdot() {
 }
 
 403() {
-bash /opt/4-ZERO-3/403-bypass.sh '$1' --exploit
+  if [ -z "$1" ]; then
+    echo "[!] Please provide a URL as the first argument. Usage: 403 <URL>"
+    return 1
+  fi
+
+  bash /opt/4-ZERO-3/403-bypass.sh -u "$1" --exploit
 }
+
 
 cmder() {
 echo "# S3 bucket listeleme

@@ -167,4 +167,72 @@ dotdot() {
   count=$(grep -E "^([^\.]*\.){$dot_count}[^\.]*$" "$file" | wc -l)
   [[ "$count" -gt 0 ]] && echo -e "${green}Length: ${count}${reset}"
 }
+
+403() {
+bash /opt/4-ZERO-3/403-bypass.sh '$1' --exploit
+}
+
+cmder() {
+echo "# S3 bucket listeleme
+s3ls my-bucket-name
+
+# S3 dosya kopyalama
+s3cp my-bucket-name /path/to/local/file.txt
+
+# WADL endpointlerini keşfetme
+thewadl https://example.com/application.wadl
+
+# crtndstry ile domain bilgisi çekme
+crtndstry example.com
+
+# Amass ile pasif tarama
+am example.com
+
+# CertSpotter ile domain tarama
+certprobe example.com
+
+# Masscan ile port tarama
+mscan 192.168.1.0/24
+
+# CertSpotter'dan domain bilgisi çekme
+certspotter example.com
+
+# CRT.sh sorgusu ile domain bilgisi çekme
+crtsh example.com
+
+# CertSpotter ve Nmap ile tarama
+certnmap example.com
+
+# IP bilgisi sorgulama
+ipinfo 8.8.8.8
+
+# Dirsearch ile dizin tarama
+dirsearch https://example.com php
+
+# Netcat listener başlatma
+ncx 8080
+
+# CRT.sh ve Dirsearch taraması
+crtshdirsearch example.com php
+
+# SQLMap ile tarama
+sqlx https://example.com/vulnerable.php?id=1
+
+# FFUF ile dizin tarama
+ffr https://example.com/FUZZ 10256
+
+# Alt alan adı toplama
+subx example.com
+
+# LinkFinder ile bağlantı keşfetme
+linx https://example.com
+
+# Dotdot araması
+dotdot subdomains.txt 4
+
+# 403 bypass tarama
+403 https://example.com/protected
+"
+}
+
 ```

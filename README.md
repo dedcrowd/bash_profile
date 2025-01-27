@@ -93,6 +93,9 @@ ffr() {
   ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230
 }
 
+ffj() {
+ ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230
+}
 
 fft() {
   echo "URL: $1"

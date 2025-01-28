@@ -244,4 +244,7 @@ dotdot subdomains.txt 4
 "
 }
 
+gsp() {
+gospider -d 9 --js -a --subs -s "$1" | grep "$2"
+}
 ```

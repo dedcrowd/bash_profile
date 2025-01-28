@@ -241,6 +241,8 @@ dotdot subdomains.txt 4
 
 # 403 bypass tarama
 403 https://example.com/protected
+
+# gsp https://example.com  #if you want :  gsp https://example.com | grepping_words
 "
 }
 

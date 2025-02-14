@@ -90,15 +90,15 @@ sqlx() {
 }
 
 ffr() {
-  ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230 -mc "$3"
+  ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230
 }
 
 ffj() {
- ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230 -mc "$3"
+ ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230
 }
 
 ffa() {
- ffuf -w /karanxa/Bug-Bounty-Wordlists/all_fuzz.txt -u "$1" -fs "$2" -t 230 -mc "$3"
+ ffuf -w /karanxa/Bug-Bounty-Wordlists/all_fuzz.txt -u "$1" -fs "$2" -t 230
 }
 
 fft() {

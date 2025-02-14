@@ -97,6 +97,10 @@ ffj() {
  ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230
 }
 
+ffa() {
+ ffuf -w /karanxa/Bug-Bounty-Wordlists/all_fuzz.txt -u "$1" -fs "$2" -t 230
+}
+
 fft() {
   echo "URL: $1"
   echo "Filter Size: $2"

@@ -106,7 +106,7 @@ subx() {
   # Parametreler ve dosya adları
   domain="$1"
   output_file="wholesubs_$domain.txt"
-  github_token=""
+  github_token="BurayaGithubTOken KOY"
 
   # Başlangıç bildirimi
   echo "[*] Subdomain toplama işlemi başladı: $domain"
@@ -137,7 +137,7 @@ subx() {
 
   # Tüm sonuçları birleştir
   echo "[*] Sonuçlar birleştiriliyor..."
-  cat "$sublist3r_file" "$subfinder_file" "$assetfinder_file" "$crt_file" "$github_file" | sort -u > "$output_file"
+  cat "$sublist3r_file" "$subfinder_file" "$assetfinder_file" "$crt_file" "$github_file" | sort -u > "$output_file" # httprobe vardi sort tan once ama iste baya azalttigi icin kaldirdim.
 
   # Geçici dosyaları temizle
   rm -rf "$tmp_dir"
@@ -145,7 +145,6 @@ subx() {
   echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"
   echo "Sonuçlar: $output_file"
 }
-
 linx() {
   base_url=$(echo "$1" | awk -F/ '{print $3}')
   sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | awk -v base="$base_url" '{print "https://"base$0}'

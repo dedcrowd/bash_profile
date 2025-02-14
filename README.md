@@ -90,21 +90,23 @@ sqlx() {
 }
 
 ffr() {
-  ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230
+  ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230 -mc "$3"
 }
 
 ffj() {
- ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230
+ ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230 -mc "$3"
 }
 
 ffa() {
- ffuf -w /karanxa/Bug-Bounty-Wordlists/all_fuzz.txt -u "$1" -fs "$2" -t 230
+ ffuf -w /karanxa/Bug-Bounty-Wordlists/all_fuzz.txt -u "$1" -fs "$2" -t 230 -mc "$3"
 }
 
 fft() {
   echo "URL: $1"
-  echo "Filter Size: $2"
+  echo "Filter Size -fs : $2"
+  echo "match status code: $3"
 }
+
 subx() {
   # Parametreler ve dosya adları
   domain="$1"

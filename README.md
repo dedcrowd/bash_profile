@@ -101,12 +101,11 @@ fft() {
   echo "URL: $1"
   echo "Filter Size: $2"
 }
-
 subx() {
   # Parametreler ve dosya adları
   domain="$1"
   output_file="wholesubs_$domain.txt"
-  github_token="BurayaGithubTOken KOY"
+  github_token="TOKEN KOY"
 
   # Başlangıç bildirimi
   echo "[*] Subdomain toplama işlemi başladı: $domain"
@@ -118,13 +117,17 @@ subx() {
   assetfinder_file="$tmp_dir/sub3.txt"
   crt_file="$tmp_dir/sub4.txt"
   github_file="$tmp_dir/sub5.txt"
+  findomain_file="$tmp_dir/sub6"
 
   # Subdomain toplama araçları
   echo "[*] Sublist3r çalışıyor..."
   sublist3r -d "$domain" -o "$sublist3r_file" 2>/dev/null
 
   echo "[*] Subfinder çalışıyor..."
-  subfinder -d "$domain" -all -recursive -silent > "$subfinder_file"
+  subfinder -d "$domain" -all -recursive -t 200 -nW -exclude-sources digitorus -silent > "$subfinder_file"
+
+  echo "[*] Findomain Calisiyor..."
+  findomain -t "$domain" -q -u "$findomain_file"
 
   echo "[*] Assetfinder çalışıyor..."
   assetfinder --subs-only "$domain" > "$assetfinder_file"
@@ -137,7 +140,7 @@ subx() {
 
   # Tüm sonuçları birleştir
   echo "[*] Sonuçlar birleştiriliyor..."
-  cat "$sublist3r_file" "$subfinder_file" "$assetfinder_file" "$crt_file" "$github_file" | sort -u > "$output_file" # httprobe vardi sort tan once ama iste baya azalttigi icin kaldirdim.
+  cat "$sublist3r_file" "$subfinder_file" "$assetfinder_file" "$crt_file" "$github_file" "$findomain_file" | sort -u > "$output_file" # httprobe vardi sort tan once ama iste baya azalttigi icin kaldirdim.
 
   # Geçici dosyaları temizle
   rm -rf "$tmp_dir"
@@ -145,6 +148,7 @@ subx() {
   echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"
   echo "Sonuçlar: $output_file"
 }
+
 linx() {
   base_url=$(echo "$1" | awk -F/ '{print $3}')
   sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | awk -v base="$base_url" '{print "https://"base$0}'

@@ -288,4 +288,18 @@ gp() {
     # Stdin'den gelen veriyi grep ile filtrele
     grep -E "$default_patterns$additional_patterns"
 }
+
+# aTearn için bash fonksiyonu
+atearn() {
+    # Varsayılan çıktı dizini
+    default_output_dir="$HOME/aTearn_output"
+    
+    # Eğer -o parametresi yoksa varsayılan dizini kullan
+    if [[ "$*" =~ "-o" ]]; then
+        python3 /opt/aTearn/aTearn.py "$@"
+    else
+        python3 /opt/aTearn/aTearn.py "$@" -o "$default_output_dir"
+    fi
+}
+
 ```

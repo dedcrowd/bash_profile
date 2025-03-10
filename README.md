@@ -1,5 +1,5 @@
 # .bash_profile
-```python#----- AWS -------
+```python #----- AWS -------
 
 LabInstallDedcrowd() {
 echo "[x] DedCrowd Lab is installing... "

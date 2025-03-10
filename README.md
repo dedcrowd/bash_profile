@@ -262,4 +262,28 @@ gospider -d 9 --js -a --subs -s "$1" | grep "$2"
 wbs() {
     xvfb-run python3 /opt/webscreenshot/webscreenshot.py -r chrome -w 200 --renderer-binary /usr/bin/chromium -i "$1" -o "$2"
 }
+
+# gp fonksiyonu: GoSpider çıktılarını filtrelemek için grep ile çalışır.
+gp() {
+    local additional_patterns=""
+
+    # -a flag'ini kontrol et ve özel uzantıları ekle
+    while getopts "a:" opt; do
+        case $opt in
+            a)
+                # Virgülle ayrılmış değerleri "|" ile değiştir ve regex için hazırla
+                additional_patterns="|$(echo "$OPTARG" | sed 's/,/|/g')"
+                ;;
+            *)
+                echo "Kullanım: gospider -s <url> | gp [-a .css,.js,.py,redirection=]" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    # Varsayılan grep filtresi (önemli dosya uzantıları ve hassas parametreler)
+    local default_patterns="(conf|\.txt|\.rar|\.zip|\.tar|\.gz|\.7z|\.bak|\.sql|\.log|\.old|\.ini|\.env|\.db|\.pdf|\.doc|\.docx|\.xls|\.xlsx|\.json|\.xml|\.cfg|\.yaml|\.yml|\.pem|\.crt|\.key|\.cert|\.pfx|\.p12|\.csv|\.dat|\.backup|\.swp|\.sqlite|\.mdb|\.accdb|\.tar\.gz|\.tgz|\.sh|\.bat|\.ps1|\.cmd|\.exe|\.dll|\.>
+    # Stdin'den gelen veriyi grep ile filtrele
+    grep -E "$default_patterns$additional_patterns"
+}
 ```

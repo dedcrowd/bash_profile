@@ -252,6 +252,8 @@ dotdot subdomains.txt 4
 403 https://example.com/protected
 
 # gsp https://example.com  #if you want :  gsp https://example.com | grepping_words
+
+gp veya gp -a .txt,.js kullanimi bize otomatik bir grepleme hizmeti sunuyor. gp defaulttur.
 "
 }
 

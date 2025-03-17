@@ -89,6 +89,12 @@ sqlx() {
   sudo sqlmap -u "$1" --batch --dbs --tamper=space2comment --technique=BEUST --level=3 --risk=3 --schema
 }
 
+# sql FAST fonksiyonu
+sqlf() {
+  sudo sqlmap -u "$1" --batch --dbs
+}
+
+
 ffr() {
   ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230
 }

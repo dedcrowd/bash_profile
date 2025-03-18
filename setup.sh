@@ -115,3 +115,7 @@ echo "[*] Setup completed successfully!"
 echo "[*] You can use the following commands: linkfinder, subx, sqlx, gospider, and many more!"
 
 echo "[+] Enjoy your Penetration Testing environment!"
+
+export PATH=$PATH:$HOME/go/bin
+source ~/.bashrc
+

@@ -1,5 +1,4 @@
-# .bash_profile
-```bash #----- AWS -------
+#----- AWS -------
 
 LabInstallDedcrowd() {
 echo "[x] DedCrowd Lab is installing... "
@@ -308,4 +307,3 @@ atearn() {
     fi
 }
 
-```

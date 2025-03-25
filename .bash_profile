@@ -113,10 +113,12 @@ fft() {
 }
 
 subx() {
+
+  run_for_domain() {
   # Parametreler ve dosya adları
   domain="$1"
   output_file="wholesubs_$domain.txt"
-  github_token="TOKEN KOY"
+  github_token="GITHUB_TOKEN_ENTER"
 
   # Başlangıç bildirimi
   echo "[*] Subdomain toplama işlemi başladı: $domain"
@@ -158,6 +160,20 @@ subx() {
 
   echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"
   echo "Sonuçlar: $output_file"
+
+}
+
+if [[ -t 0 && $# -gt 0 ]]; then
+    # Argüman verilmişse normal şekilde çalış
+    run_for_domain "$1"
+  else
+    # stdin'den okuyarak çalış
+    while IFS= read -r domain || [[ -n "$domain" ]]; do
+      [[ -z "$domain" ]] && continue  # boş satırları atla
+      run_for_domain "$domain"
+    done
+  fi
+
 }
 
 linx() {

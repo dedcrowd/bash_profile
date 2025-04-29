@@ -1,0 +1,400 @@
+#----- AWS -------
+
+LabInstallDedcrowd() {
+echo "[x] DedCrowd Lab is installing... "
+
+echo "	crtndstry is installing..."
+cd /opt; git clone https://github.com/nahamsec/crtndstry.git
+mkdir /work_table
+cd /opt ; git clone https://github.com/s0md3v/XSStrike.git
+cd XSStrike;  pip install -r requirements.txt --break-system-packages
+cd / 
+go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
+go install github.com/bitquark/shortscan/cmd/shortscan@latest
+
+}
+
+
+s3ls(){
+aws s3 ls s3://$1
+}
+
+s3cp(){
+aws s3 cp $2 s3://$1 
+}
+
+#---- Content discovery ----
+thewadl(){ #this grabs endpoints from a application.wadl and puts them in yahooapi.txt
+curl -s $1 | grep path | sed -n "s/.*resource path=\"\(.*\)\".*/\1/p" | tee -a /opt/thewadlApi_$1.txt
+}
+
+#----- recon -----
+crtndstry(){
+./opt/crtndstry/crtndstry $1
+}
+
+am(){ #runs amass passively and saves to json
+amass enum --passive -d $1 -json $1.json
+jq .name $1.json | sed "s/\"//g"| httprobe -c 60 | tee -a $1-domains.txt
+}
+
+certprobe(){ #runs httprobe on all the hosts from certspotter
+curl -s https://crt.sh/\?q\=\%.$1\&output\=json | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe | tee -a ./all.txt
+}
+
+mscan(){ #runs masscan
+sudo masscan -p4443,2075,2076,6443,3868,3366,8443,8080,9443,9091,3000,8000,5900,8081,6000,10000,8181,3306,5000,4000,8888,5432,15672,9999,161,4044,7077,4040,9000,8089,443,744
+}
+
+certspotter(){ 
+curl -s https://certspotter.com/api/v0/certs\?domain\=$1 | jq '.[].dns_names[]' | sed 's/\"//g' | sed 's/\*\.//g' | sort -u | grep $1
+} #h/t Michiel Prins
+
+crtsh(){
+curl -s https://crt.sh/?Identity=%.$1 | grep ">*.$1" | sed 's/<[/]*[TB][DR]>/\n/g' | grep -vE "<|^[\*]*[\.]*$1" | sort -u | awk 'NF'
+}
+
+certnmap(){
+curl https://certspotter.com/api/v0/certs\?domain\=$1 | jq '.[].dns_names[]' | sed 's/\"//g' | sed 's/\*\.//g' | sort -u | grep $1  | nmap -T5 -Pn -sS -i - -$
+} #h/t Jobert Abma
+
+ipinfo(){
+curl http://ipinfo.io/$1
+}
+
+#------ Tools ------
+dirsearch(){ runs dirsearch and takes host and extension as arguments
+dirsearch.py -u $1 -e $2 -t 50 -b 
+}
+
+
+ncx(){
+nc -l -n -vv -p $1 -k
+}
+
+crtshdirsearch(){ #gets all domains from crtsh, runs httprobe and then dir bruteforcers
+curl -s https://crt.sh/?q\=%.$1\&output\=json | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} dirsearch -u {} -e $2 -t 50 -b 
+}
+
+# ncx fonksiyonu
+ncx() {
+  nc -l -n -vv -p "$1" -k
+}
+
+# crtshdirsearch fonksiyonu
+crtshdirsearch() { # gets all domains from crtsh, runs httprobe and then dir bruteforcers
+  curl -s "https://crt.sh/?q=%.$1&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u | httprobe -c 50 | grep https | xargs -n1 -I{} dirsearch -u {} -e "$2" -t 50 -b
+}
+
+# Gelişmiş SQLMap fonksiyonu (Request file kullanarak)
+sqlr() {
+  sudo sqlmap -r "$1" \
+  --batch \
+  --dbs \
+  --tamper=space2comment,between,randomcase,uppercase,escapequotes \
+  --technique=BEUST \
+  --level=5 \
+  --risk=3 \
+  --schema \
+  --random-agent \
+  --drop-set-cookie \
+  --threads=10 \
+  --timeout=30 \
+  --retries=3 \
+  --delay=1 \
+  --hex \
+  --fresh-queries \
+  --eta \
+  # --proxy="http://127.0.0.1:8080" Burp Suite kullanıyorsan aktif et
+}
+
+# Gelişmiş SQLMap fonksiyonu (URL üzerinden)
+sqlx() {
+  sudo sqlmap -u "$1" \
+  --batch \
+  --dbs \
+  --tamper=space2comment,between,randomcase,uppercase,escapequotes \
+  --technique=BEUST \
+  --level=5 \
+  --risk=3 \
+  --schema \
+  --random-agent \
+  --drop-set-cookie \
+  --threads=10 \
+  --timeout=30 \
+  --retries=3 \
+  --delay=1 \
+  --hex \
+  --fresh-queries \
+  --eta
+}
+
+# sql FAST fonksiyonu
+sqlf() {
+  sudo sqlmap -u "$1" --batch --dbs
+}
+
+ffr() {
+  ffuf -w /root/myWordlists/raft-medium-directories.txt -u "$1" -fs "$2" -t 230  
+}
+
+ffj() {
+ ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt -u "$1" -fs "$2" -t 230  
+}
+
+ffa() {
+ ffuf -w /karanxa/Bug-Bounty-Wordlists/all_fuzz.txt -u "$1" -fs "$2" -t 230  
+}
+
+fft() {
+  echo "URL: $1"
+  echo "Filter Size -fs : $2"
+  echo "match status code: $3"
+}
+
+subx() {
+
+  run_for_domain() {
+  # Parametreler ve dosya adları
+  domain="$1"
+  output_file="wholesubs_$domain.txt"
+  github_token="TOKEN_KEY"
+
+  # Başlangıç bildirimi
+  echo "[*] Subdomain toplama işlemi başladı: $domain"
+
+  # Alt alan adları için geçici dosyalar
+  tmp_dir=$(mktemp -d)
+  sublist3r_file="$tmp_dir/sub1.txt"
+  subfinder_file="$tmp_dir/sub2.txt"
+  assetfinder_file="$tmp_dir/sub3.txt"
+  crt_file="$tmp_dir/sub4.txt"
+  github_file="$tmp_dir/sub5.txt"
+  findomain_file="$tmp_dir/sub6"
+
+  # Subdomain toplama araçları
+  echo "[*] Sublist3r çalışıyor..."
+  sublist3r -d "$domain" -o "$sublist3r_file" 2>/dev/null
+
+  echo "[*] Subfinder çalışıyor..."
+  subfinder -d "$domain" -all -recursive -t 200 -nW -exclude-sources digitorus -silent > "$subfinder_file"
+
+  echo "[*] Findomain Calisiyor..."
+  findomain -t "$domain" -q -u "$findomain_file"
+
+  echo "[*] Assetfinder çalışıyor..."
+  assetfinder --subs-only "$domain" > "$assetfinder_file"
+
+  echo "[*] crt.sh sorgusu çalışıyor..."
+  curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sed 's/\\*\\.//g' > "$crt_file"
+
+  echo "[*] GitHub subdomain sorgusu çalışıyor..."
+  github-subdomains -t "$github_token" -d "$domain" -o "$github_file"
+
+  # Tüm sonuçları birleştir
+  echo "[*] Sonuçlar birleştiriliyor..."
+  cat "$sublist3r_file" "$subfinder_file" "$assetfinder_file" "$crt_file" "$github_file" "$findomain_file" | sort -u > "$output_file" # httprobe vardi sort tan once ama iste baya azalttigi icin kaldirdim.
+
+  # Geçici dosyaları temizle
+  rm -rf "$tmp_dir"
+
+  echo "[+] Alt alan adları başarıyla toplandı ve doğrulandı!"
+  echo "Sonuçlar: $output_file"
+
+}
+
+if [[ -t 0 && $# -gt 0 ]]; then
+    # Argüman verilmişse normal şekilde çalış
+    run_for_domain "$1"
+  else
+    # stdin'den okuyarak çalış
+    while IFS= read -r domain || [[ -n "$domain" ]]; do
+      [[ -z "$domain" ]] && continue  # boş satırları atla
+      run_for_domain "$domain"
+    done
+  fi
+
+}
+
+
+linkx() {
+  base_url=$(echo "$1" | awk -F/ '{print $3}')
+  sudo python3 /opt/LinkFinder/linkfinder.py -i "$1" -r ^/ -o cli | awk -v base="$base_url" '{print "https://"base$0}'
+}
+
+dotdot() {
+  local file="$1"
+  local dot_count="${2:-4}"  # Varsayılan olarak 4
+  local green='\033[0;32m'
+  local reset='\033[0m'
+
+  # Dosya mevcut değilse hiçbir şey döndürme
+  [[ -f "$file" ]] || return
+
+  # Belirtilen noktaları filtrele ve eşleşen satırları yeşil renkte göster
+  grep -E "^([^\.]*\.){$dot_count}[^\.]*$" "$file" | while read -r line; do
+    echo -e "${green}${line}${reset}"
+  done
+
+  # Toplam eşleşen satır sayısını yeşil renkte göster
+  local count
+  count=$(grep -E "^([^\.]*\.){$dot_count}[^\.]*$" "$file" | wc -l)
+  [[ "$count" -gt 0 ]] && echo -e "${green}Length: ${count}${reset}"
+}
+
+nrust() {
+  local domain="$1"  # İlk parametre dosya adı
+  local ip=$(rustscan -a "$1" > /tmp/rustscanLog.txt | cat /tmp/rustscanLog.txt | grep Open | awk '{gsub(/\:/, " "); print}' | awk '{print $2}' | head -n 1)  # Tek bir IP adresi
+  local ports=$(cat /tmp/rustscanLog.txt | grep Open | awk '{gsub(/\:/, " "); print}' | awk '{print $3}' | paste -sd ',' -)  # Portlar virgülle ayrılmış
+
+  # Eğer IP veya port yoksa işlem yapma
+  [[ -z "$ip" || -z "$ports" ]] && return
+
+  # Nmap komutunu çalıştır
+  nmap -Pn -n -p"$ports" -sV -sSC --script=*vuln* "$ip"
+}
+
+403() {
+  if [ -z "$1" ]; then
+    echo "[!] Please provide a URL as the first argument. Usage: 403 <URL>"
+    return 1
+  fi
+
+  bash /opt/4-ZERO-3/403-bypass.sh -u "$1" --exploit
+}
+
+
+cmder() {
+echo "# S3 bucket listeleme
+s3ls my-bucket-name
+
+# S3 dosya kopyalama
+s3cp my-bucket-name /path/to/local/file.txt
+
+# WADL endpointlerini keşfetme
+thewadl https://example.com/application.wadl
+
+# crtndstry ile domain bilgisi çekme
+crtndstry example.com
+
+# Amass ile pasif tarama
+am example.com
+
+# CertSpotter ile domain tarama
+certprobe example.com
+
+# Masscan ile port tarama
+mscan 192.168.1.0/24
+
+# CertSpotter'dan domain bilgisi çekme
+certspotter example.com
+
+# CRT.sh sorgusu ile domain bilgisi çekme
+crtsh example.com
+
+# CertSpotter ve Nmap ile tarama
+certnmap example.com
+
+# IP bilgisi sorgulama
+ipinfo 8.8.8.8
+
+# Dirsearch ile dizin tarama
+dirsearch https://example.com php
+
+# Netcat listener başlatma
+ncx 8080
+
+# CRT.sh ve Dirsearch taraması
+crtshdirsearch example.com php
+
+# SQLMap ile tarama
+sqlx https://example.com/vulnerable.php?id=1
+
+# FFUF ile dizin tarama
+ffr https://example.com/FUZZ 10256
+
+# Alt alan adı toplama
+subx example.com
+
+# LinkFinder ile bağlantı keşfetme
+linx https://example.com
+
+# Dotdot araması
+dotdot subdomains.txt 4
+
+# 403 bypass tarama
+403 https://example.com/protected
+"
+}
+
+gsp() {
+gospider -d 9 --js -a --subs -s "$1" | grep "$2"
+}
+
+wbs() {
+    xvfb-run python3 /opt/webscreenshot/webscreenshot.py -r chrome -w 200 --renderer-binary /usr/bin/chromium -i "$1" -o "$2"
+}
+
+nax() {
+nmap -A -Pn -p- -T4 $1
+}
+naf() {
+nmap -A -Pn -p- -t4 -iL $1
+}
+
+# gp fonksiyonu: GoSpider çıktılarını filtrelemek için grep ile çalışır.
+gfs() {
+    local additional_patterns=""
+
+    # -a flag'ini kontrol et ve özel uzantıları ekle
+    while getopts "a:" opt; do
+        case $opt in
+            a)
+                additional_patterns="|$(echo "$OPTARG" | sed 's/,/|/g')"
+                ;;
+            *)
+                echo "Kullanım: gospider -s <url> | gp [-a .css,.js,.py,redirection=]" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    # Varsayılan grep filtresi
+    local default_patterns="(conf|\\.txt|\\.rar|\\.zip|\\.tar|\\.gz|\\.7z|\\.bak|\\.sql|\\.log|\\.old|\\.ini|\\.env|\\.db|\\.pdf|\\.doc|\\.docx|\\.xls|\\.xlsx|\\.json|\\.xml|\\.cfg|\\.yaml|\\.yml|\\.pem|\\.crt|\\.key|\\.cert|\\.pfx|\\.p12|\\.csv|\\.dat|\\.backup|\\.swp|\\.sqlite|\\.mdb|\\.accdb|\\.tar\\.gz|\\.tgz|\\.bat|\\.ps1|\\.cmd|\\.exe|\\.dll|\\.sys)"
+
+    # Stdin'den gelen veriyi grep ile filtrele
+    grep -E "$default_patterns$additional_patterns"
+}
+
+
+# aTearn için bash fonksiyonu
+atearn() {
+    # Varsayılan çıktı dizini
+    default_output_dir="$HOME/aTearn_output"
+    
+    # Eğer -o parametresi yoksa varsayılan dizini kullan
+    if [[ "$*" =~ "-o" ]]; then
+        python3 /opt/aTearn/aTearn.py "$@"
+    else
+        python3 /opt/aTearn/aTearn.py "$@" -o "$default_output_dir"
+    fi
+}
+
+# NaTearn için bash fonksiyonu
+natearn() {
+    # Varsayılan çıktı dizini
+    default_output_dir="$HOME/aTearn_output"
+
+    # Eğer -o parametresi yoksa varsayılan dizini kullan
+    if [[ "$*" =~ "-o" ]]; then
+        python3 /opt/aTearn/naearn.py "$@"
+    else
+        python3 /opt/aTearn/natearn.py "$@" -o "$default_output_dir"
+    fi
+}
+
+
+cnf() {
+	grep -Ei 'config|api|token|app_|yml|-key|api-key|user_|_id|_url|http'
+
+}

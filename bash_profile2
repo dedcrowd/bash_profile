@@ -543,3 +543,7 @@ fscan() {
 
   echo "[*] Taramalar tamamlandı. Çıktılar: $output_dir klasöründe."
 }
+denc() {
+  char="$1"
+  printf '%%25%02X\n' "'$char"
+}

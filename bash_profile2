@@ -547,3 +547,9 @@ denc() {
   char="$1"
   printf '%%25%02X\n' "'$char"
 }
+
+fxvf() {
+    grep -Fxv -f "$1" "$2"
+    # fxvf eski_liste.txt yeni_liste.txt ---- Yeni cikan subdomainleri bulmayi amaclar.
+}
+

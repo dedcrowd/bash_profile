@@ -1,3 +1,66 @@
+#------ 11/01/2026 ------# pgaca ile dun bittirdim
+
+recx () {
+
+    TMP_DOMAINS=$(mktemp)
+
+    # stdin mi argüman mı
+    if [ -p /dev/stdin ]; then
+        cat /dev/stdin > "$TMP_DOMAINS"
+    else
+        echo "$1" > "$TMP_DOMAINS"
+    fi
+
+    # normalize
+    sed -E 's#https?://##; s#/.*##' "$TMP_DOMAINS" | sort -u > "$TMP_DOMAINS.clean"
+
+    while read domain; do
+        echo "[+] Recon: $domain"
+
+        OUTFILE="${domain}.txt"
+        TMP_URLS=$(mktemp -d)
+
+        # -------------------------
+        # KATANA (bug bounty tuned)
+        # -------------------------
+        katana -u "https://$domain" \
+            -d 5 \
+            -jc \
+            -kf \
+            -ps \
+            -pss wayback,commoncrawl,alienvault \
+            -ef woff,woff2,ttf,svg,png,jpg,jpeg,css \
+            2>/dev/null > "$TMP_URLS/katana"
+
+        # -------------------------
+        # GAU
+        # -------------------------
+        gau --subs "$domain" 2>/dev/null > "$TMP_URLS/gau"
+
+        # -------------------------
+        # WAYBACK
+        # -------------------------
+        waybackurls "$domain" 2>/dev/null > "$TMP_URLS/wayback"
+
+        # -------------------------
+        # Merge + filtre
+        # -------------------------
+        cat "$TMP_URLS/"* | \
+            grep -Ei '\.(php|asp|aspx|jsp|json|js|xml|env|sql|bak|old|zip|tar|gz)?($|\?)' | \
+            uro | \
+            sort -u > "$OUTFILE"
+
+        rm -rf "$TMP_URLS"
+
+        echo "[✓] Çıktı: $OUTFILE"
+    done < "$TMP_DOMAINS.clean"
+
+    rm -f "$TMP_DOMAINS" "$TMP_DOMAINS.clean"
+}
+
+
+
+
 #----- AWS -------
 
 c(){
